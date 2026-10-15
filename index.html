@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Prevent browser extensions (e.g., request interceptors) from crashing when assigning to window.fetch
+      (function () {
+        try {
+          var originalFetch = window.fetch;
+          Object.defineProperty(window, 'fetch', {
+            configurable: true,
+            enumerable: true,
+            get: function () {
+              return originalFetch;
+            },
+            set: function (val) {
+              if (typeof val === 'function') {
+                originalFetch = val;
+              }
+            }
+          });
+        } catch (e) {}
+      })();
+    </script>
+    <title>SHUMAILA ZAMAN — Luxury Women's Fashion & Couture</title>
+    <meta name="description" content="Timeless fashion designed for the modern woman. Explore SHUMAILA ZAMAN luxury Pakistani and international eastern couture, silk co-ords, abayas, and evening glamour." />
+    <meta property="og:title" content="SHUMAILA ZAMAN — Luxury Women's Fashion & Couture" />
+    <meta property="og:description" content="Timeless fashion designed for the modern woman. Explore SHUMAILA ZAMAN luxury Pakistani and international eastern couture, silk co-ords, abayas, and evening glamour." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SHUMAILA ZAMAN" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="SHUMAILA ZAMAN — Luxury Women's Fashion & Couture" />
+    <meta name="twitter:description" content="Timeless fashion designed for the modern woman. Explore SHUMAILA ZAMAN luxury Pakistani and international eastern couture, silk co-ords, abayas, and evening glamour." />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231E1815'/%3E%3Ccircle cx='32' cy='32' r='26' fill='none' stroke='%23C6A355' stroke-width='1.5'/%3E%3Ctext x='32' y='43' font-family='Georgia, serif' font-size='34' font-style='italic' fill='%23C6A355' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ClothingStore",
+        "name": "SHUMAILA ZAMAN",
+        "description": "Timeless luxury fashion designed for the modern woman. Eastern couture, western silhouettes, silk co-ord sets, and bespoke evening wear.",
+        "priceRange": "Rs. 8,500 - Rs. 68,000",
+        "currenciesAccepted": "PKR, USD, GBP, AED",
+        "paymentAccepted": "Cash on Delivery, Credit Card, Online Bank Transfer",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Fashion Avenue, Gulberg III",
+          "addressLocality": "Lahore",
+          "addressCountry": "PK"
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-[#FAF7F2] text-[#1E1815] antialiased selection:bg-[#EED9D4] selection:text-[#1E1815]">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

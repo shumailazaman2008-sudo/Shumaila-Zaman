@@ -1,0 +1,199 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private customer profile, wishlist, and saved addresses for a patron.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128,
+          "description": "Firebase Auth UID of the user."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Full name of the patron."
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 150,
+          "description": "Verified email address of the patron."
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 40,
+          "description": "Contact phone number."
+        },
+        "wishlistIds": {
+          "type": "array",
+          "description": "Bounded list of up to 10 product IDs saved in the patron's wishlist."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last profile update."
+        }
+      },
+      "required": ["uid", "displayName", "email", "phone", "wishlistIds", "updatedAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Couture order record created at checkout and tracked through delivery.",
+      "type": "object",
+      "properties": {
+        "orderId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 3,
+          "maxLength": 64,
+          "description": "Human-readable order code (e.g. SHM-1042)."
+        },
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Firebase Auth UID of the customer who placed the order."
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Recipient full name."
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 150,
+          "description": "Recipient email."
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 40,
+          "description": "Recipient phone."
+        },
+        "address": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 250,
+          "description": "Street delivery address."
+        },
+        "city": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80,
+          "description": "Destination city."
+        },
+        "postalCode": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 20,
+          "description": "Destination postal code."
+        },
+        "deliveryMethod": {
+          "type": "string",
+          "enum": ["Standard Insured", "Express VIP Air"],
+          "maxLength": 40,
+          "description": "Selected courier shipping tier."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["Cash on Delivery", "Card Payment", "Online Bank Transfer"],
+          "maxLength": 40,
+          "description": "Selected payment method."
+        },
+        "itemsSummary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "Human-readable summary of ordered couture pieces, sizes, and quantities."
+        },
+        "itemCount": {
+          "type": "number",
+          "description": "Total number of pieces in the order."
+        },
+        "total": {
+          "type": "number",
+          "description": "Total order amount in PKR."
+        },
+        "statusStep": {
+          "type": "number",
+          "description": "Order tracking stage from 0 (Placed) to 5 (Delivered)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Immutable server timestamp when order was placed."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when order status was last updated."
+        }
+      },
+      "required": [
+        "orderId",
+        "ownerId",
+        "customerName",
+        "email",
+        "phone",
+        "address",
+        "city",
+        "postalCode",
+        "deliveryMethod",
+        "paymentMethod",
+        "itemsSummary",
+        "itemCount",
+        "total",
+        "statusStep",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "NewsletterSubscriber": {
+      "title": "NewsletterSubscriber",
+      "description": "Private Atelier List email subscription owned by an authenticated user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128,
+          "description": "Firebase Auth UID of the subscriber."
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 150,
+          "description": "Subscribed email address."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of subscription."
+        }
+      },
+      "required": ["uid", "email", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores private patron profile and bounded wishlist IDs. Strictly accessible only by the owner or bootstrapped admin."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Stores customer couture orders. Accessible by the order ownerId or the bootstrapped store admin."
+    },
+    "/subscribers/{userId}": {
+      "schema": { "$ref": "#/entities/NewsletterSubscriber" },
+      "description": "Stores Private Atelier List subscriptions keyed by userId."
+    }
+  }
+}

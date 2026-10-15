@@ -1,0 +1,6 @@
+{
+  "name": "SHUMAILA — Luxury Women's Fashion & Couture",
+  "description": "Timeless fashion designed for the modern woman. Explore luxury Pakistani & international eastern couture, contemporary silhouettes, silk co-ords, and festive ensembles.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

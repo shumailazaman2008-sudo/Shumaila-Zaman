@@ -1,0 +1,199 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net: Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'shumailazaman2008@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // 3. Entity Validation Blueprints (Synchronized with firebase-blueprint.json)
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'displayName', 'email', 'phone', 'wishlistIds', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'displayName', 'email', 'phone', 'wishlistIds', 'updatedAt']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == userId &&
+        data.uid == request.auth.uid &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
+        data.phone is string && data.phone.size() >= 0 && data.phone.size() <= 40 &&
+        data.wishlistIds is list && data.wishlistIds.size() <= 10 &&
+        (data.wishlistIds.size() == 0 || (data.wishlistIds[0] is string && data.wishlistIds[0].size() <= 100)) &&
+        data.updatedAt is timestamp && data.updatedAt == request.time;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll([
+          'orderId',
+          'ownerId',
+          'customerName',
+          'email',
+          'phone',
+          'address',
+          'city',
+          'postalCode',
+          'deliveryMethod',
+          'paymentMethod',
+          'itemsSummary',
+          'itemCount',
+          'total',
+          'statusStep',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'orderId',
+          'ownerId',
+          'customerName',
+          'email',
+          'phone',
+          'address',
+          'city',
+          'postalCode',
+          'deliveryMethod',
+          'paymentMethod',
+          'itemsSummary',
+          'itemCount',
+          'total',
+          'statusStep',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.orderId is string && data.orderId.size() >= 3 && data.orderId.size() <= 64 &&
+        data.orderId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 100 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
+        data.phone is string && data.phone.size() >= 3 && data.phone.size() <= 40 &&
+        data.address is string && data.address.size() >= 3 && data.address.size() <= 250 &&
+        data.city is string && data.city.size() >= 2 && data.city.size() <= 80 &&
+        data.postalCode is string && data.postalCode.size() >= 2 && data.postalCode.size() <= 20 &&
+        data.deliveryMethod is string && data.deliveryMethod.size() <= 40 &&
+        (data.deliveryMethod == 'Standard Insured' || data.deliveryMethod == 'Express VIP Air') &&
+        data.paymentMethod is string && data.paymentMethod.size() <= 40 &&
+        (data.paymentMethod == 'Cash on Delivery' || data.paymentMethod == 'Card Payment' || data.paymentMethod == 'Online Bank Transfer') &&
+        data.itemsSummary is string && data.itemsSummary.size() >= 1 && data.itemsSummary.size() <= 500 &&
+        data.itemCount is int && data.itemCount >= 1 && data.itemCount <= 100 &&
+        data.total is int && data.total >= 100 && data.total <= 10000000 &&
+        data.statusStep is int && data.statusStep >= 0 && data.statusStep <= 5 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidSubscriber(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'createdAt']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == userId &&
+        data.uid == request.auth.uid &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
+        data.createdAt is timestamp && data.createdAt == request.time;
+    }
+
+    // 4. Collection Match Blocks
+
+    // Admins lookup collection (read-only for self/admin, no client writes)
+    match /admins/{adminId} {
+      allow get: if isVerifiedUser() && isValidId(adminId) && request.auth.uid == adminId;
+      allow list, create, update, delete: if false;
+    }
+
+    // Users Collection (PII Isolated to Owner or Admin)
+    match /users/{userId} {
+      allow get: if isVerifiedUser() && isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isVerifiedUser() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() && isValidId(userId) && isOwner(userId) && isValidUserProfile(incoming(), userId);
+      allow update: if isVerifiedUser() && isValidId(userId) && isValidUserProfile(incoming(), userId) && (
+        isAdmin() ||
+        (
+          isOwner(userId) &&
+          incoming().uid == existing().uid &&
+          incoming().email == existing().email &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'phone', 'wishlistIds', 'updatedAt'])
+        )
+      );
+      allow delete: if false;
+    }
+
+    // Orders Collection (Owner or Admin)
+    match /orders/{orderId} {
+      allow get: if isVerifiedUser() && isValidId(orderId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isVerifiedUser() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() && isValidId(orderId) &&
+        isValidOrder(incoming()) &&
+        incoming().orderId == orderId &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().statusStep == 0 &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(orderId) && isValidOrder(incoming()) && (
+        (
+          isAdmin() &&
+          incoming().orderId == existing().orderId &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['statusStep', 'updatedAt'])
+        ) ||
+        (
+          existing().ownerId == request.auth.uid &&
+          existing().statusStep < 5 &&
+          incoming().orderId == existing().orderId &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().total == existing().total &&
+          incoming().itemCount == existing().itemCount &&
+          incoming().itemsSummary == existing().itemsSummary &&
+          incoming().statusStep == existing().statusStep &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['phone', 'address', 'city', 'postalCode', 'updatedAt'])
+        )
+      );
+      allow delete: if isAdmin() && isValidId(orderId);
+    }
+
+    // Subscribers Collection (Private Atelier List)
+    match /subscribers/{userId} {
+      allow get: if isVerifiedUser() && isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isVerifiedUser() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() && isValidId(userId) && isOwner(userId) && isValidSubscriber(incoming(), userId);
+      allow update, delete: if false;
+    }
+  }
+}
